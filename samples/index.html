@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sample maker</title>
+    <style>
+        @font-face {
+            font-family: "font declaration here because phantomjs has a bug that prevent to use the first declared font";
+        }
+    </style>
+</head>
+<body style="margin: 0">
+    <span id="sample" style="font-size: 70px;">Sample</span>
+
+    <script src="../node_modules/opentype.js/dist/opentype.js"></script>
+    <script src="../node_modules/webfontloader/webfontloader.js"></script>
+    <script>
+        window.onload = function(){
+            var query = parseQuery();
+            var url = query.url;
+            var family = query.family;
+            var style = query.style;
+            var weight = parseInt(query.weight);
+            opentype.load(url, function(err, font){
+                if (err){
+                    throw new Error("Could not load font from " + url + ": " + err);
+                }
+
+                var buffer = font.toArrayBuffer();
+                var openTypeFont = opentype.parse(buffer);
+
+                if (!openTypeFont) {
+                    throw new Error("Open type parsing failed");
+                }
+                if (!openTypeFont.supported) {
+                    throw new Error("Font not supported. " + url);
+                }
+
+                var fontFaceSrc = toFontFaceSrc(buffer);
+                var newStyle = document.createElement('style');
+                newStyle.appendChild(document.createTextNode("\
+                    @font-face {\
+                        font-family: '" + family + "';\
+                        src: " + fontFaceSrc  + ";\
+                        font-weight: " + weight + ";\
+                        font-style: " + style + ";\
+                    }\
+                "));
+                document.head.appendChild(newStyle);
+
+                WebFont.load({
+                    custom: {
+                        families: [family]
+                    },
+                    timeout: 2000,
+                    active: function () {
+                        var sample = document.getElementById("sample");
+                        sample.style.fontFamily = family;
+
+                        var fontSize = parseInt(sample.style.fontSize.replace(/px/, ''));
+                        while (sample.offsetHeight < 100){
+                            sample.style.fontSize = ++fontSize + "px";
+                        }
+
+                        if (window.callPhantom){
+                            window.callPhantom({top: 0, left: 0, width: sample.offsetWidth, height: sample.offsetHeight});
+                        }
+                    },
+                    inactive: function () {
+                        throw new Error("Could not load font: " + family);
+                    }
+                });
+            });
+        };
+
+        function toFontFaceSrc(buffer){
+            var base64 = base64ArrayBuffer(buffer);
+            return 'url(data:font/ttf;charset=utf-8;base64,' + base64 + ') format("truetype")';
+        }
+
+        function parseQuery() {
+            var result = {};
+            var query = location.search.substring(1);
+            var vars = query.split('&');
+            for (var i = 0; i < vars.length; i++) {
+                var pair = vars[i].split('=');
+                result[decodeURIComponent(pair[0])] = decodeURIComponent(pair[1]);
+            }
+            return result;
+        }
+
+        function base64ArrayBuffer(arrayBuffer) {
+            var base64    = ''
+            var encodings = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+
+            var bytes         = new Uint8Array(arrayBuffer)
+            var byteLength    = bytes.byteLength
+            var byteRemainder = byteLength % 3
+            var mainLength    = byteLength - byteRemainder
+
+            var a, b, c, d
+            var chunk
+            // Main loop deals with bytes in chunks of 3
+            for (var i = 0; i < mainLength; i = i + 3) {
+                // Combine the three bytes into a single integer
+                chunk = (bytes[i] << 16) | (bytes[i + 1] << 8) | bytes[i + 2]
+
+                // Use bitmasks to extract 6-bit segments from the triplet
+                a = (chunk & 16515072) >> 18 // 16515072 = (2^6 - 1) << 18
+                b = (chunk & 258048)   >> 12 // 258048   = (2^6 - 1) << 12
+                c = (chunk & 4032)     >>  6 // 4032     = (2^6 - 1) << 6
+                d = chunk & 63               // 63       = 2^6 - 1
+
+                // Convert the raw binary segments to the appropriate ASCII encoding
+                base64 += encodings[a] + encodings[b] + encodings[c] + encodings[d]
+            }
+
+            // Deal with the remaining bytes and padding
+            if (byteRemainder == 1) {
+                chunk = bytes[mainLength]
+
+                a = (chunk & 252) >> 2 // 252 = (2^6 - 1) << 2
+
+                // Set the 4 least significant bits to zero
+                b = (chunk & 3)   << 4 // 3   = 2^2 - 1
+
+                base64 += encodings[a] + encodings[b] + '=='
+            } else if (byteRemainder == 2) {
+                chunk = (bytes[mainLength] << 8) | bytes[mainLength + 1]
+
+                a = (chunk & 64512) >> 10 // 64512 = (2^6 - 1) << 10
+                b = (chunk & 1008)  >>  4 // 1008  = (2^6 - 1) << 4
+
+                // Set the 2 least significant bits to zero
+                c = (chunk & 15)    <<  2 // 15    = 2^4 - 1
+
+                base64 += encodings[a] + encodings[b] + encodings[c] + '='
+            }
+
+            return base64
+        }
+    </script>
+</body>
+</html>
