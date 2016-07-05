@@ -45,9 +45,12 @@ function makeSamples(port, cb){
 
 gulp.task('samples-upload', function(cb){
     var workerFarm = require('worker-farm');
-    cdnUpload(workerFarm)
-        .then(() => combineMetadata(workerFarm))
-        .then(() => cb());
+    // cdnUpload(workerFarm)
+    //     .then(() => combineMetadata(workerFarm))
+    //     .then(() => cb());
+
+    combineMetadata(workerFarm)
+         .then(() => cb());
 });
 
 function combineMetadata(workerFarm){
@@ -78,7 +81,7 @@ function combineMetadata(workerFarm){
 
 function cdnUpload(workerFarm){
     var workers = workerFarm({
-            maxConcurrentWorkers: 1,
+            maxConcurrentWorkers: 10,
             maxConcurrentCallsPerWorker: 1
         },
         require.resolve('../samples/uploadWorker'));

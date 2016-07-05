@@ -8,7 +8,8 @@ function init(options){
 
     if (!initialized){
         if (!fs.existsSync(targetPath) || options.force){
-            fs.writeFileSync(targetPath, '{"collection":[]}', 'utf-8');
+            var obj = {collection: [], popular: popularFonts};
+            fs.writeFileSync(targetPath, JSON.stringify(obj), 'utf-8');
         }
         initialized = true;
     }
@@ -59,3 +60,59 @@ module.exports = function(dir, options, callback){
     //     callback(err, metadata.name);
     // });
 };
+
+var popularFonts = [
+    'Open Sans',
+    'Roboto',
+    'Slabo 27px',
+    'Lato',
+    'Oswald',
+    'Roboto Condensed',
+    'Source Sans Pro',
+    'Montserrat',
+    'Raleway',
+    'PT Sans',
+    'Lora',
+    'Roboto Slab',
+    'Open Sans Condensed',
+    'Droid Sans',
+    'Droid Serif',
+    'Arimo',
+    'Merriweather',
+    'PT Sans Narrow',
+    'Fjalla One',
+    'Noto Sans',
+    'PT Serif',
+    'Titillium Web',
+    'Playfair Display',
+    'Muli',
+    'Indie Flower',
+    'Alegreya Sans',
+    'Bitter',
+    'Dosis',
+    'Oxygen',
+    'Cabin',
+    'Inconsolata',
+    'Poiret One',
+    'Yanone Kaffeesatz',
+    'Lobster',
+    'Candal',
+    'Passion One',
+    'Hind',
+    'Arvo',
+    'Noto Serif',    
+    'Nunito',
+    'Bree Serif',
+    'Josefin Sans',
+    'Covered By Your Grace',
+    'Abel',
+    'Exo 2',
+    'Libre Baskerville',
+    'Asap',
+    'Merriweather Sans',
+    'Pacifico',
+    'Poppins',
+    'Quicksand',
+    'Crimson Text',
+    'Varela Round'    
+];
